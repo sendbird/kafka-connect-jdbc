@@ -27,8 +27,11 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
         
-    - name: Run Maven package
-      run: mvn clean package -DskipTests -Dbuild.tag=${{ github.ref_name }}
+    - name: Debug ref_name
+      run: echo "GitHub ref_name is [${{ github.ref_name }}]"
+      
+    - name: Run Maven package with assembly
+      run: mvn clean package assembly:single -DskipTests -Dbuild.tag="${{ github.ref_name }}"
       
     - name: List target files
       run: ls -la target/
