@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [ v10.8.4 ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ v10.8.4 ]
 
@@ -27,4 +28,10 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
         
     - name: Run Maven package
-      run: mvn clean package
+      run: mvn clean package -Dbuild.tag=${{ github.ref_name }}
+      
+    - name: Upload package zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: kafka-connect-jdbc-package-${{ github.ref_name }}
+        path: target/*-package.zip
