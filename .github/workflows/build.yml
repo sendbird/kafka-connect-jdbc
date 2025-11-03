@@ -48,5 +48,5 @@ jobs:
     - name: Upload package zip
       uses: actions/upload-artifact@v4
       with:
-        name: kafka-connect-jdbc-package-${{ github.ref_name }}
+        name: kafka-connect-jdbc-package-${{ steps.build_tag.outputs.build_tag }}
         path: target/*-package.zip
