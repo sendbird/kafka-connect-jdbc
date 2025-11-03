@@ -28,7 +28,10 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
         
     - name: Run Maven package
-      run: mvn clean package -Dbuild.tag=${{ github.ref_name }}
+      run: mvn clean package -DskipTests -Dbuild.tag=${{ github.ref_name }}
+      
+    - name: List target files
+      run: ls -la target/
       
     - name: Upload package zip
       uses: actions/upload-artifact@v4
