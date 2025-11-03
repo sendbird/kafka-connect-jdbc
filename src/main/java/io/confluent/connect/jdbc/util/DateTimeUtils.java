@@ -338,4 +338,17 @@ public class DateTimeUtils {
 
   private DateTimeUtils() {
   }
+
+
+  public static Long toEpochMillis(Timestamp timestamp) {
+    return Optional.ofNullable(timestamp)
+            .map(Timestamp::getTime)
+            .orElse(null);
+  }
+
+  public static Timestamp toMillisTimestamp(Long millis) {
+    return Optional.ofNullable(millis)
+            .map(Timestamp::new)
+            .orElse(null);
+  }
 }

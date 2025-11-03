@@ -80,12 +80,12 @@ public class TimestampIncrementingCriteria {
   protected final ColumnId incrementingColumn;
   protected final TimeZone timeZone;
   private final LruCache<Schema, List<String>> caseAdjustedTimestampColumns;
-
+  protected boolean isBigIntTimestamp = false;
 
   public TimestampIncrementingCriteria(
-      ColumnId incrementingColumn,
-      List<ColumnId> timestampColumns,
-      TimeZone timeZone
+          ColumnId incrementingColumn,
+          List<ColumnId> timestampColumns,
+          TimeZone timeZone
   ) {
     this.timestampColumns =
         timestampColumns != null ? timestampColumns : Collections.<ColumnId>emptyList();
@@ -145,16 +145,32 @@ public class TimestampIncrementingCriteria {
   ) throws SQLException {
     Timestamp beginTime = values.beginTimestampValue();
     Timestamp endTime = values.endTimestampValue();
-    Long incOffset = values.lastIncrementedValue();
-    stmt.setTimestamp(1, endTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
-    stmt.setTimestamp(2, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
-    stmt.setLong(3, incOffset);
-    stmt.setTimestamp(4, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
-    log.debug(
-        "Executing prepared statement with start time value = {} end time = {} and incrementing"
-        + " value = {}", DateTimeUtils.formatTimestamp(beginTime, timeZone),
-        DateTimeUtils.formatTimestamp(endTime, timeZone), incOffset
-    );
+
+    if (isBigIntTimestamp) {
+      Long incOffset = values.lastIncrementedValue();
+      long beginMillis = beginTime != null ? beginTime.getTime() : 0L;
+      long endMillis = endTime != null ? endTime.getTime() : System.currentTimeMillis();
+      stmt.setLong(1, endMillis);
+      stmt.setLong(2, beginMillis);
+      stmt.setLong(3, incOffset);
+      stmt.setLong(4, beginMillis);
+      log.debug(
+          "Executing prepared statement with start time value = {} end time = {} and incrementing"
+                  + " value = {}", beginMillis, endMillis, incOffset
+      );
+    } else {
+      Long incOffset = values.lastIncrementedValue();
+      stmt.setTimestamp(1, endTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
+      stmt.setTimestamp(2, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
+      stmt.setLong(3, incOffset);
+      stmt.setTimestamp(4, beginTime, DateTimeUtils.getTimeZoneCalendar(timeZone));
+      log.debug(
+          "Executing prepared statement with start time value = {} end time = {} and incrementing"
+                  + " value = {}", DateTimeUtils.formatTimestamp(beginTime, timeZone),
+          DateTimeUtils.formatTimestamp(endTime, timeZone), incOffset
+      );
+
+    }
   }
 
   protected void setQueryParametersIncrementing(
