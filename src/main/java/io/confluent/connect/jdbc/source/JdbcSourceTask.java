@@ -189,7 +189,11 @@ public class JdbcSourceTask extends SourceTask {
     String incrementingColumn
         = config.getString(JdbcSourceTaskConfig.INCREMENTING_COLUMN_NAME_CONFIG);
     List<String> timestampColumns
-        = config.getList(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+            = config.getList(JdbcSourceTaskConfig.TIMESTAMP_COLUMN_NAME_CONFIG);
+
+    String timestampBigintColumn =
+            config.getString(JdbcSourceTaskConfig.TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG);
+
     Long timestampDelayInterval
         = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG);
     boolean validateNonNulls
@@ -208,13 +212,23 @@ public class JdbcSourceTask extends SourceTask {
       switch (queryMode) {
         case TABLE:
           if (validateNonNulls) {
-            validateNonNullable(
-                mode,
-                tableOrQuery,
-                incrementingColumn,
-                timestampColumns,
-                tableType
-            );
+            if (timestampBigintColumn != null && !timestampBigintColumn.isEmpty()) {
+              validateNonNullable(
+                  mode,
+                  tableOrQuery,
+                  incrementingColumn,
+                  Arrays.asList(timestampBigintColumn),
+                  tableType
+              );
+            } else {
+              validateNonNullable(
+                  mode,
+                  tableOrQuery,
+                  incrementingColumn,
+                  timestampColumns,
+                  tableType
+              );
+            }
           }
           tablePartitionsToCheck = partitionsByTableFqn.get(tableOrQuery);
           break;
@@ -290,21 +304,39 @@ public class JdbcSourceTask extends SourceTask {
             )
         );
       } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
-        tableQueue.add(
-            new TimestampIncrementingTableQuerier(
-                dialect,
-                queryMode,
-                tableOrQuery,
-                topicPrefix,
-                timestampColumns,
-                incrementingColumn,
-                offset,
-                timestampDelayInterval,
-                timeZone,
-                suffix,
-                timestampGranularity
+        if (timestampBigintColumn != null && !timestampBigintColumn.isEmpty()) {
+          tableQueue.add(
+            new TimestampBitIntIncrementingTableQuerier(
+              dialect,
+              queryMode,
+              tableOrQuery,
+              topicPrefix,
+              timestampBigintColumn,
+              incrementingColumn,
+              offset,
+              timestampDelayInterval,
+              timeZone,
+              suffix,
+              timestampGranularity
             )
-        );
+          );
+        } else {
+          tableQueue.add(
+            new TimestampIncrementingTableQuerier(
+              dialect,
+              queryMode,
+              tableOrQuery,
+              topicPrefix,
+              timestampColumns,
+              incrementingColumn,
+              offset,
+              timestampDelayInterval,
+              timeZone,
+              suffix,
+              timestampGranularity
+            )
+          );
+        }
       }
     }
 
