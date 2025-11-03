@@ -2,10 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [ v10.8.4 ]
     tags: [ 'v*' ]
-  pull_request:
-    branches: [ v10.8.4 ]
 
 jobs:
   build:
