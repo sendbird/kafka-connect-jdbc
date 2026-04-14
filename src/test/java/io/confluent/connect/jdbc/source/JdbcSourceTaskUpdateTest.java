@@ -1068,6 +1068,30 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
     task.start(taskConfig);
   }
 
+  private void startCustomTask(String bigIntTimestampColumn, String incrementingColumn, String query, Integer batchSize,
+                               String timestamp_granularity_config) {
+    String mode = JdbcSourceConnectorConfig.MODE_TIMESTAMP_INCREMENTING;
+
+    initializeTask();
+    Map<String, String> taskConfig = singleTableConfig();
+    taskConfig.put(JdbcSourceConnectorConfig.MODE_CONFIG, mode);
+    if (query != null) {
+      taskConfig.put(JdbcSourceTaskConfig.QUERY_CONFIG, query);
+      taskConfig.put(JdbcSourceTaskConfig.TABLES_CONFIG, "");
+      taskConfig.put(JdbcSourceTaskConfig.TABLES_FETCHED, "true");
+    }
+    taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG, bigIntTimestampColumn);
+    taskConfig.put(JdbcSourceConnectorConfig.INCREMENTING_COLUMN_NAME_CONFIG, incrementingColumn);
+    taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, "0");
+    taskConfig.put(JdbcSourceConnectorConfig.TIMESTAMP_GRANULARITY_CONFIG, timestamp_granularity_config);
+
+    if (batchSize != null) {
+      taskConfig.put(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG, batchSize.toString());
+    }
+
+    task.start(taskConfig);
+  }
+
   private void verifyIncrementingFirstPoll(String topic) throws Exception {
     List<SourceRecord> records = task.poll();
     assertEquals(Collections.singletonMap(1, 1), countIntValues(records, "id"));
@@ -1246,4 +1270,40 @@ public class JdbcSourceTaskUpdateTest extends JdbcSourceTaskTestBase {
       assertEquals(partition, record.sourcePartition());
     }
   }
+
+  @Test
+  public void testBigIntegerTimstamp() throws Exception {
+    expectInitializeNoOffsets(Arrays.asList(
+            SINGLE_TABLE_PARTITION_WITH_VERSION,
+            SINGLE_TABLE_PARTITION)
+    );
+    PowerMock.replayAll();
+
+    // Manage these manually so we can verify the emitted values
+    db.createTable(SINGLE_TABLE_NAME,
+            "modified", "BIGINT NOT NULL",
+            "id", "INT NOT NULL");
+
+    long baseTimeMillis = System.currentTimeMillis();
+
+    startCustomTask("modified", "id", null, 10, "MILLIS_LONG");
+
+    int test_count = 99;
+    for(int i=1; i <= test_count; i++) {
+      db.insert(SINGLE_TABLE_NAME,"modified", baseTimeMillis, "id", i);
+    }
+    int totalRecords = 0;
+
+    for (int i=1; i<20; i++) {
+      List<SourceRecord> records = task.poll();
+      if (records != null){
+        for(SourceRecord record : records) {
+          totalRecords++;
+        }
+      }
+    }
+    assertEquals(test_count, totalRecords);
+    PowerMock.verifyAll();
+  }
+
 }

@@ -304,6 +304,25 @@ public interface DatabaseDialect extends ConnectionProvider {
   );
 
   /**
+   * Create a criteria generator for queries that look for changed data using timestamp and
+   * incremented columns, with support for bigint timestamp columns.
+   *
+   * @param incrementingColumn the identifier of the incremented column; may be null if there is
+   *                           none
+   * @param timestampColumns   the identifiers of the timestamp column; may be null if there is
+   *                           none
+   * @param isBigIntTimestamp  whether the timestamp column stores epoch millis as a bigint
+   * @return the {@link TimestampIncrementingCriteria} implementation; never null
+   */
+  default TimestampIncrementingCriteria criteriaFor(
+      ColumnId incrementingColumn,
+      List<ColumnId> timestampColumns,
+      boolean isBigIntTimestamp
+  ) {
+    return criteriaFor(incrementingColumn, timestampColumns);
+  }
+
+  /**
    * Use the supplied {@link SchemaBuilder} to add a field that corresponds to the column with the
    * specified definition.
    *

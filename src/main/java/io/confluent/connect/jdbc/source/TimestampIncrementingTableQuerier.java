@@ -72,10 +72,10 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
   protected final Map<String, String> partition;
   protected final String topic;
   protected final TimestampGranularity timestampGranularity;
-  private final List<ColumnId> timestampColumns;
-  private String incrementingColumnName;
-  private final long timestampDelay;
-  private final TimeZone timeZone;
+  protected final List<ColumnId> timestampColumns;
+  protected String incrementingColumnName;
+  protected final long timestampDelay;
+  protected final TimeZone timeZone;
 
   public TimestampIncrementingTableQuerier(DatabaseDialect dialect, QueryMode mode, String name,
                                            String topicPrefix,
@@ -183,7 +183,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier implements C
     log.trace("Set the committed offset: {}", committedOffset.getTimestampOffset());
   }
 
-  private void findDefaultAutoIncrementingColumn(Connection db) throws SQLException {
+  protected void findDefaultAutoIncrementingColumn(Connection db) throws SQLException {
     // Default when unspecified uses an autoincrementing column
     if (incrementingColumnName != null && incrementingColumnName.isEmpty()) {
       // Find the first auto-incremented column ...

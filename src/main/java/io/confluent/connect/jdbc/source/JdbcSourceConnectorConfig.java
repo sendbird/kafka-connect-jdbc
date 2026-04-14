@@ -189,6 +189,8 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   private static final String INCREMENTING_COLUMN_NAME_DISPLAY = "Incrementing Column Name";
 
   public static final String TIMESTAMP_COLUMN_NAME_CONFIG = "timestamp.column.name";
+  public static final String TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG = "bigint_timestamp.column.name";
+
   private static final String TIMESTAMP_COLUMN_NAME_DOC =
       "Comma separated list of one or more timestamp columns to detect new or modified rows using "
       + "the COALESCE SQL function. Rows whose first non-null timestamp value is greater than the "
@@ -707,6 +709,16 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         ++orderInGroup,
         Width.MEDIUM,
         QUERY_RETRIES_DISPLAY
+    ).define(
+            TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG,
+            Type.STRING,
+            null,
+            Importance.MEDIUM,
+            "",
+            MODE_GROUP,
+            ++orderInGroup,
+            Width.MEDIUM,
+            TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG
     );
   }
 
@@ -1011,7 +1023,14 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         ? Schema.OPTIONAL_STRING_SCHEMA : Schema.STRING_SCHEMA,
         DateTimeUtils::toIsoDateTimeString,
         (isoDateTimeString, tz) ->
-            DateTimeUtils.toTimestampFromIsoDateTime((String) isoDateTimeString, tz));
+            DateTimeUtils.toTimestampFromIsoDateTime((String) isoDateTimeString, tz)),
+
+    MILLIS_LONG(optional -> optional ? Schema.OPTIONAL_INT64_SCHEMA : Schema.INT64_SCHEMA,
+            (timestamp, tz) -> DateTimeUtils.toEpochMillis(timestamp),
+            (epochMillis, tz) -> DateTimeUtils.toMillisTimestamp((Long) epochMillis)),
+    ;
+
+
 
     public final Function<Boolean, Schema> schemaFunction;
     public final BiFunction<Timestamp, TimeZone, Object> fromTimestamp;

@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v4
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Set build tag
+      id: build_tag
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "build_tag=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+        else
+          echo "build_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: Debug build tag
+      run: echo "Build tag is [${{ steps.build_tag.outputs.build_tag }}]"
+      
+    - name: Run Maven package with assembly
+      run: mvn clean package assembly:single -DskipTests -Dbuild.tag="${{ steps.build_tag.outputs.build_tag }}"
+      
+    - name: List target files
+      run: ls -la target/
+      
+    - name: Upload package zip
+      uses: actions/upload-artifact@v4
+      with:
+        name: kafka-connect-jdbc-package-${{ steps.build_tag.outputs.build_tag }}
+        path: target/*-package.zip
