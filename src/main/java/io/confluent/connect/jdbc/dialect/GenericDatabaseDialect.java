@@ -1011,6 +1011,17 @@ public class GenericDatabaseDialect implements DatabaseDialect {
     return new TimestampIncrementingCriteria(incrementingColumn, timestampColumns, timeZone);
   }
 
+  @Override
+  public TimestampIncrementingCriteria criteriaFor(
+      ColumnId incrementingColumn,
+      List<ColumnId> timestampColumns,
+      boolean isBigIntTimestamp
+  ) {
+    return new TimestampIncrementingCriteria(
+        incrementingColumn, timestampColumns, timeZone, isBigIntTimestamp
+    );
+  }
+
   /**
    * Determine the name of the field. By default this is the column alias or name.
    *

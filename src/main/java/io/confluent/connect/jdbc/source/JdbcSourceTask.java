@@ -194,6 +194,24 @@ public class JdbcSourceTask extends SourceTask {
     String timestampBigintColumn =
             config.getString(JdbcSourceTaskConfig.TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG);
 
+    if (timestampBigintColumn != null && !timestampBigintColumn.isEmpty()) {
+      if (!mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
+        throw new ConfigException(
+            JdbcSourceConnectorConfig.TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG
+            + " is only supported with " + JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING
+            + " mode, but mode is: " + mode
+        );
+      }
+      if (timestampColumns != null && !timestampColumns.isEmpty()
+          && !timestampColumns.get(0).isEmpty()) {
+        throw new ConfigException(
+            JdbcSourceConnectorConfig.TIMESTAMP_BIGINT_COLUMN_NAME_CONFIG + " and "
+            + JdbcSourceConnectorConfig.TIMESTAMP_COLUMN_NAME_CONFIG
+            + " cannot both be set. Use one or the other."
+        );
+      }
+    }
+
     Long timestampDelayInterval
         = config.getLong(JdbcSourceTaskConfig.TIMESTAMP_DELAY_INTERVAL_MS_CONFIG);
     boolean validateNonNulls
@@ -306,7 +324,7 @@ public class JdbcSourceTask extends SourceTask {
       } else if (mode.endsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP_INCREMENTING)) {
         if (timestampBigintColumn != null && !timestampBigintColumn.isEmpty()) {
           tableQueue.add(
-            new TimestampBitIntIncrementingTableQuerier(
+            new TimestampBigIntIncrementingTableQuerier(
               dialect,
               queryMode,
               tableOrQuery,

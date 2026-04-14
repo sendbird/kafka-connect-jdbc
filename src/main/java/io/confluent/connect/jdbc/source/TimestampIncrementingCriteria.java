@@ -80,17 +80,27 @@ public class TimestampIncrementingCriteria {
   protected final ColumnId incrementingColumn;
   protected final TimeZone timeZone;
   private final LruCache<Schema, List<String>> caseAdjustedTimestampColumns;
-  protected boolean isBigIntTimestamp = false;
+  protected final boolean isBigIntTimestamp;
 
   public TimestampIncrementingCriteria(
           ColumnId incrementingColumn,
           List<ColumnId> timestampColumns,
           TimeZone timeZone
   ) {
+    this(incrementingColumn, timestampColumns, timeZone, false);
+  }
+
+  public TimestampIncrementingCriteria(
+          ColumnId incrementingColumn,
+          List<ColumnId> timestampColumns,
+          TimeZone timeZone,
+          boolean isBigIntTimestamp
+  ) {
     this.timestampColumns =
         timestampColumns != null ? timestampColumns : Collections.<ColumnId>emptyList();
     this.incrementingColumn = incrementingColumn;
     this.timeZone = timeZone;
+    this.isBigIntTimestamp = isBigIntTimestamp;
     this.caseAdjustedTimestampColumns =
         timestampColumns != null ? new LruCache<>(16) : null;
   }
